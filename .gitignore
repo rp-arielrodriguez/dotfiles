@@ -1,0 +1,17 @@
+# Secrets
+config/zsh/secrets.zsh
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+._*
+
+# Shell history
+.zsh_history
+.zsh_sessions/
