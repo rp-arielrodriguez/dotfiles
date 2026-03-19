@@ -12,4 +12,3 @@
 	helper = !/opt/homebrew/bin/gh auth git-credential
 [user]
 	name = Ariel Rodriguez
-	email = ariel.rodriguez@recargapay.com
