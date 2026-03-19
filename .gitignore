@@ -1,5 +1,6 @@
-# Secrets
+# Secrets (machine-specific)
 config/zsh/secrets.zsh
+config/zsh/local.zsh
 
 # Editor
 .idea/

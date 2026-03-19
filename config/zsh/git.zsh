@@ -3,10 +3,11 @@ alias jiraNumber='echo $(git_current_branch) | cut -d"-" -f2'
 alias repoName='git_repo_name'
 alias currentBranch='git_current_branch'
 alias JIRA='echo [$(jiraSquad)-$(jiraNumber)]'
+jiritas="echo $(git_current_branch) | cut -d'-' -f1 | - |  $(git_current_branch) | cut -d'-' -f2"
 
 SQUAD='@recarga/account-services'
 LABELS='&labels=AccountServices,account-services'
-GITHUB_URL="https:///github.com/recarga/"
+GITHUB_URL="https://github.com/recarga/"
 JIRA_PR_URL="https://recargapay.atlassian.net/browse/"
 BODY=$(printf "&body=%s\n\n%s" "$SQUAD" "$JIRA_PR_URL")
 
@@ -14,10 +15,12 @@ PR_BASE='$GITHUB_URL$(repoName)/compare/'
 PR_SUFFIX='$(currentBranch)?expand=1&title='
 COMMIT_INFO='[$(jiraSquad)-$(jiraNumber)] - $(git reflog -1 | sed "s/^.*: //")$BODY$(jiraSquad)-$(jiraNumber)$LABELS'
 
-alias opendev='open -a "Google Chrome" "'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
-alias openqa='open -a "Google Chrome" "'$PR_BASE'qa...'$PR_SUFFIX'QA - '$COMMIT_INFO'"'
-alias openst='open -a "Google Chrome" "'$PR_BASE'staging...'$PR_SUFFIX'STAGING - '$COMMIT_INFO'"'
-alias openprod='open -a "Google Chrome" "'$PR_BASE'$(git_main_branch)...'$PR_SUFFIX'PROD - '$COMMIT_INFO'"'
+alias opendev='open -a "Safari" "'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
+alias opendevprint='"'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
+alias openqa='open -a "Safari" "'$PR_BASE'qa...'$PR_SUFFIX'QA - '$COMMIT_INFO'"'
+alias openst='open -a "Safari" "'$PR_BASE'staging...'$PR_SUFFIX'STAGING - '$COMMIT_INFO'"'
+alias openprod='open -a "Safari" "'$PR_BASE'$(git_main_branch)...'$PR_SUFFIX'PROD - '$COMMIT_INFO'"'
+alias openprodprint='echo "'$PR_BASE'$(git_main_branch)...'$PR_SUFFIX'PROD - '$COMMIT_INFO'"'
 
 mkpr() {
   if [[ $# -gt 0 ]]; then

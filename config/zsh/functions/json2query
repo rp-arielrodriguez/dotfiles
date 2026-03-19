@@ -1,0 +1,13 @@
+# Convert JSON object to query string
+# Example: echo '{"foo":"bar","baz":["a","b"]}' | json2query
+# Output: foo=bar&baz=a,b
+json2query() {
+  jq -r 'to_entries
+         | map("\(.key)=\(
+             if (.value|type) == "array"
+             then (.value|join(","))
+             else .value
+             end
+           )")
+         | join("&")'
+}

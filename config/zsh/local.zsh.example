@@ -1,0 +1,38 @@
+# Machine-specific settings - copy to ~/.config/zsh/local.zsh
+# This file is NOT symlinked and can be customized per machine
+
+# Theme (spaceship requires: git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt")
+ZSH_THEME="spaceship"
+export SPACESHIP_DIR_COLOR="#7aa2f7"
+export SPACESHIP_PROMPT_ADD_NEWLINE=false
+export SPACESHIP_PROMPT_SEPARATE_LINE=true
+export SPACESHIP_RPROMPT_ADD_NEWLINE=true
+export SPACESHIP_PROMPT_ASYNC=true
+export SPACESHIP_USER_SHOW=always
+export SPACESHIP_KUBECTL_SHOW=false
+export SPACESHIP_PROMPT_ORDER=(
+  dir host git kubectl aws java exec_time line_sep sudo char
+)
+
+# Plugins
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+COMPLETION_WAITING_DOTS="true"
+
+# fpath additions (before omz compinit)
+fpath=(~/.docker/completions ~/.config/zsh/functions $fpath)
+
+# Custom exit for tmux (detach instead of closing last pane)
+exit() {
+  if [[ -z $TMUX ]]; then
+    builtin exit
+    return
+  fi
+  panes=$(tmux list-panes | wc -l)
+  wins=$(tmux list-windows | wc -l) 
+  count=$(($panes + $wins - 1))
+  if [ $count -eq 1 ]; then
+    tmux detach
+  else
+    builtin exit
+  fi
+}
