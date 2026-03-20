@@ -3,6 +3,7 @@ alias jiraNumber='echo $(git_current_branch) | cut -d"-" -f2'
 alias repoName='git_repo_name'
 alias currentBranch='git_current_branch'
 alias JIRA='echo [$(jiraSquad)-$(jiraNumber)]'
+alias gupa='git pull --rebase --autostash'
 
 SQUAD='@recarga/account-services'
 LABELS='&labels=AccountServices,account-services'
