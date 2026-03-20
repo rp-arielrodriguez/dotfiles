@@ -3,7 +3,6 @@ alias jiraNumber='echo $(git_current_branch) | cut -d"-" -f2'
 alias repoName='git_repo_name'
 alias currentBranch='git_current_branch'
 alias JIRA='echo [$(jiraSquad)-$(jiraNumber)]'
-alias gupa='git pull --rebase --autostash'
 
 SQUAD='@recarga/account-services'
 LABELS='&labels=AccountServices,account-services'
@@ -34,6 +33,6 @@ alias gmc='current=$(git_current_branch); git checkout staging && git pull --reb
 alias gmcdev='current=$(git_current_branch); git branch -D dev && git pull --rebase --autostash && git checkout dev && git checkout -b merge/dev/$current && git merge $current'
 alias gmcqa='current=$(git_current_branch); git checkout qa && git pull --rebase --autostash && git checkout -b merge/qa/$current && git merge $current'
 
-alias gmm='gco staging && gupa && gcb merge/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
+alias gmm='gco staging && gpra && gcb merge/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
 alias gmmdev='git branch -D dev && git checkout dev && git checkout -b merge/dev/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin/$(git_main_branch)'
-alias gmmqa='gco qa && gupa && gcb merge/qa/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
+alias gmmqa='gco qa && gpra && gcb merge/qa/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
