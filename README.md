@@ -10,6 +10,12 @@ cd ~/dotfiles
 ./scripts/install.sh
 ```
 
+Preview without changing files:
+
+```bash
+./scripts/install.sh --dry-run
+```
+
 ## Structure
 
 ```
@@ -28,6 +34,8 @@ cd ~/dotfiles
 │   │   └── json2query
 │   ├── local.zsh.example    # Template for machine-specific
 │   └── secrets.zsh.example  # Template for API keys
+├── config/agents/           # Shared agent config
+│   └── AGENTS.md            # Tool-neutral instructions for Codex/Claude/OpenCode
 └── scripts/
     └── install.sh
 ```
@@ -37,6 +45,49 @@ cd ~/dotfiles
 1. Edit `~/.config/zsh/secrets.zsh` with your API keys
 2. Edit `~/.config/zsh/local.zsh` for machine-specific settings (theme, plugins)
 3. Restart your shell: `exec zsh`
+
+## Agent Config
+
+Shared agent instructions live in `config/agents/AGENTS.md`. Tool-specific config
+files are symlinks to that neutral source:
+
+| Tool | Symlink |
+|------|---------|
+| OpenCode | `~/.config/opencode/AGENTS.md` |
+| Generic agents | `~/.agents/AGENTS.md` |
+| Codex | `~/.codex/AGENTS.md` |
+| Claude Code | `~/.claude/CLAUDE.md` |
+
+Keep project/company-specific instructions in the nearest workspace or repository
+`AGENTS.md`/`CLAUDE.md`; the global file should stay personal and reusable.
+
+### Workspace Instructions
+
+Workspace-level instructions are installed from tab-separated mapping files. This
+keeps public dotfiles generic while allowing private work/personal overlays.
+
+The installer reads these files when present:
+
+| File | Intended use |
+|------|--------------|
+| `config/agents/workspaces/links.tsv` | Optional public mappings |
+| `config/agents/workspaces/*.local.tsv` | Local/private mappings inside this checkout |
+| `~/.config/agents/workspaces.tsv` | Private mappings outside the public repo |
+
+Mapping format:
+
+```text
+<workspace-path>	<instruction-file>	<targets>
+```
+
+Example:
+
+```text
+~/work/repos	~/.config/agents/workspaces/work/AGENTS.md	AGENTS.md,CLAUDE.md
+```
+
+The `targets` column is optional and defaults to `AGENTS.md,CLAUDE.md`. Keep
+sensitive workspace instruction files in a private repo or under `~/.config/agents`.
 
 ## Zsh Modules
 

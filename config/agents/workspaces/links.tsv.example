@@ -1,0 +1,3 @@
+# workspace-path	instruction-file	targets
+# ~/work/repos	~/.config/agents/workspaces/work/AGENTS.md	AGENTS.md,CLAUDE.md
+# ~/personal	~/.config/agents/workspaces/personal/AGENTS.md	AGENTS.md

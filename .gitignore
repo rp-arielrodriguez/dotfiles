@@ -1,6 +1,8 @@
 # Secrets (machine-specific)
 config/zsh/secrets.zsh
 config/zsh/local.zsh
+config/agents/workspaces/*.local.tsv
+config/agents/private/
 
 # Editor
 .idea/
