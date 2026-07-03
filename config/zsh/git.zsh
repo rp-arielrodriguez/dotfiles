@@ -14,7 +14,7 @@ PR_BASE='$GITHUB_URL$(repoName)/compare/'
 PR_SUFFIX='$(currentBranch)?expand=1&title='
 COMMIT_INFO='[$(jiraSquad)-$(jiraNumber)] - $(git reflog -1 | sed "s/^.*: //")$BODY$(jiraSquad)-$(jiraNumber)$LABELS'
 
-alias opendev='open -a "Safari" "'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
+alias opendev='open -a "Google Chrome" "'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
 alias opendevprint='"'$PR_BASE'dev...'$PR_SUFFIX'DEV - '$COMMIT_INFO'"'
 alias openqa='open -a "Safari" "'$PR_BASE'qa...'$PR_SUFFIX'QA - '$COMMIT_INFO'"'
 alias openst='open -a "Safari" "'$PR_BASE'staging...'$PR_SUFFIX'STAGING - '$COMMIT_INFO'"'
@@ -29,10 +29,12 @@ mkpr() {
   fi
 }
 
+# Resolve conflicts between the current feature branch and environment branches.
 alias gmc='current=$(git_current_branch); git checkout staging && git pull --rebase --autostash && git checkout -b merge/$current && git merge $current'
 alias gmcdev='current=$(git_current_branch); git branch -D dev && git pull --rebase --autostash && git checkout dev && git checkout -b merge/dev/$current && git merge $current'
 alias gmcqa='current=$(git_current_branch); git checkout qa && git pull --rebase --autostash && git checkout -b merge/qa/$current && git merge $current'
 
+# Recover failed update-branches flows through intermediate branches.
 alias gmm='gco staging && gpra && gcb merge/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
 alias gmmdev='git branch -D dev && git checkout dev && git checkout -b merge/dev/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin/$(git_main_branch)'
 alias gmmqa='gco qa && gpra && gcb merge/qa/$(git_main_branch)-$(date +%Y-%m-%d_%H) && git merge origin $(git_main_branch)'
