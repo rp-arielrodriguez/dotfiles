@@ -2,6 +2,9 @@
 
 Personal dotfiles for Ariel Rodriguez.
 
+Agent maintainers: read [`AGENTS.md`](AGENTS.md) first for source-of-truth,
+privacy, installer, and troubleshooting rules.
+
 ## Install
 
 ```bash
