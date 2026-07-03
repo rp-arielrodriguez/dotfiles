@@ -59,6 +59,7 @@ Installer safety invariants:
 ## Structure
 
 - `home/`: files symlinked directly into `$HOME`.
+- `bin/`: portable helper commands symlinked into `~/.local/bin`.
 - `config/zsh/`: zsh modules symlinked into `~/.config/zsh`.
 - `config/zsh/*.example`: templates copied once to private local files.
 - `config/agents/AGENTS.md`: global agent instructions shared by Codex, Claude,
@@ -105,7 +106,8 @@ except `.example` templates. Keep secrets and per-machine values in
 Prefer portable detection:
 - Use `$HOME`, not `/Users/<name>`.
 - Check command paths before evaluating them.
-- Support Apple Silicon and Intel Homebrew paths when relevant.
+- Support Apple Silicon Homebrew, Intel Homebrew, and Linuxbrew paths when relevant.
+- Keep shell startup safe when optional tools are missing.
 - Avoid expensive shell startup work unless lazy-loaded.
 
 ## Troubleshooting

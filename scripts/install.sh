@@ -194,6 +194,13 @@ link_config "$DOTFILES_DIR/home/.zshrc" ~/.zshrc
 link_config "$DOTFILES_DIR/home/.zshenv" ~/.zshenv
 link_config "$DOTFILES_DIR/home/.gitconfig" ~/.gitconfig
 
+section "Portable helper commands"
+ensure_dir ~/.local/bin
+for f in "$DOTFILES_DIR/bin"/*; do
+  [[ -f "$f" ]] || continue
+  link_config "$f" ~/.local/bin/"$(basename "$f")"
+done
+
 # Create ~/.config/zsh and symlink modules
 section "Zsh modules"
 ensure_dir ~/.config/zsh

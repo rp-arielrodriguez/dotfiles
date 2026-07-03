@@ -6,9 +6,9 @@
 	insteadOf = https://github.com/recarga/
 [credential "https://github.com"]
 	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !sh -c 'exec "$HOME/.local/bin/gh-git-credential" "$@"' -
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !sh -c 'exec "$HOME/.local/bin/gh-git-credential" "$@"' -
 [user]
 	name = Ariel Rodriguez

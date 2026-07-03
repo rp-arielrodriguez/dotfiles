@@ -23,6 +23,8 @@ Preview without changing files:
 
 ```
 ~/dotfiles/
+├── bin/                     # Portable helper commands symlinked to ~/.local/bin
+│   └── gh-git-credential
 ├── home/                    # Symlinked to ~
 │   ├── .zshrc
 │   ├── .zshenv
@@ -48,6 +50,19 @@ Preview without changing files:
 1. Edit `~/.config/zsh/secrets.zsh` with your API keys
 2. Edit `~/.config/zsh/local.zsh` for machine-specific settings (theme, plugins)
 3. Restart your shell: `exec zsh`
+
+## Platform Support
+
+The installer and agent config support macOS and Linux. Shell startup detects:
+
+- Homebrew on Apple Silicon: `/opt/homebrew`
+- Homebrew on Intel macOS: `/usr/local`
+- Linuxbrew: `/home/linuxbrew/.linuxbrew`
+- Android SDK on macOS: `~/Library/Android/sdk`
+- Android SDK on Linux: `~/Android/Sdk`
+
+Oh My Zsh is optional for shell startup safety, but recommended because some git
+aliases expect Oh My Zsh's git helpers and plugins.
 
 ## Agent Config
 
@@ -109,6 +124,7 @@ sensitive workspace instruction files in a private repo or under `~/.config/agen
 - **Lazy-loaded tools**: jenv, mise, nvm only initialize on first use (~500ms saved)
 - **Smart adb reverse**: Checks existing mappings before adding
 - **Modular**: Each concern in its own file
+- **macOS/Linux portable**: Detects Homebrew/Linuxbrew, Android SDK, gh, jenv, mise, fzf
 - **Machine-specific**: `local.zsh` for per-machine customization
 - **Secrets**: API keys in separate gitignored file
 

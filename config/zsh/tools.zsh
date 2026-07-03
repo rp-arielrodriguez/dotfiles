@@ -2,14 +2,18 @@
 export PATH="$HOME/.jenv/shims:${PATH}"
 _jenv_lazy_init() {
   unfunction jenv 2>/dev/null
-  eval "$(/opt/homebrew/bin/jenv init - zsh)"
+  if command -v jenv >/dev/null 2>&1; then
+    eval "$(command jenv init - zsh)"
+  fi
 }
 jenv() { _jenv_lazy_init; jenv "$@" }
 
 # Lazy-load mise
 mise() {
   unset -f mise
-  eval "$(mise activate zsh)"
+  if command -v mise >/dev/null 2>&1; then
+    eval "$(command mise activate zsh)"
+  fi
   mise "$@"
 }
 
@@ -19,10 +23,14 @@ if command -v direnv >/dev/null; then
 fi
 
 # fzf
-{ source <(fzf --zsh); } 2>/dev/null
+if command -v fzf >/dev/null 2>&1; then
+  { source <(fzf --zsh); } 2>/dev/null
+fi
 
 # gh copilot
-eval "$(gh copilot alias -- zsh 2>/dev/null || true)"
+if command -v gh >/dev/null 2>&1; then
+  eval "$(gh copilot alias -- zsh 2>/dev/null || true)"
+fi
 
 # Autoload custom functions from ~/.config/zsh/functions
 autoload -Uz ~/.config/zsh/functions/*(:t)
