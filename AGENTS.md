@@ -15,6 +15,8 @@ install on a fresh developer machine.
   - `~/.agents/AGENTS.md`
   - `~/.codex/AGENTS.md`
   - `~/.claude/CLAUDE.md`
+- Shared skills live under `config/agents/skills/` and are installed as symlinks
+  into the supported tool skill directories.
 - Workspace/company/private instructions do not belong in this public repo unless
   they are intentionally public and generic. Prefer private mappings via
   `~/.config/agents/workspaces.tsv`.
@@ -70,6 +72,7 @@ Installer safety invariants:
   `~/.config/tmux/tmux.conf` and `~/.tmux.conf`.
 - `config/agents/AGENTS.md`: global agent instructions shared by Codex, Claude,
   OpenCode, and generic agent shims.
+- `config/agents/skills/`: public, generic skills shared by supported agents.
 - `config/agents/workspaces/`: public docs/examples for workspace-level mappings.
 - `scripts/install.sh`: idempotent installer and dry-run reporter.
 - `scripts/sync.sh`: safe repo update + dry-run + optional install wrapper.
@@ -81,6 +84,12 @@ Installer safety invariants:
 Edit `config/agents/AGENTS.md`. Keep it generic and reusable. If the rule only
 applies to one company, repo, or workspace, put it in a workspace instruction file
 outside this public repo and add a private mapping.
+
+### Add a shared agent skill
+
+Add `config/agents/skills/<skill-name>/SKILL.md`. Keep it public, generic, and
+free of secrets. The installer links each skill into OpenCode, generic agents,
+Codex, and Claude skill directories.
 
 ### Add workspace instructions
 

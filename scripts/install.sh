@@ -227,6 +227,17 @@ link_config "$AGENT_INSTRUCTIONS" ~/.agents/AGENTS.md
 link_config "$AGENT_INSTRUCTIONS" ~/.codex/AGENTS.md
 link_config "$AGENT_INSTRUCTIONS" ~/.claude/CLAUDE.md
 
+section "Agent skills"
+for skill in "$DOTFILES_DIR/config/agents/skills"/*; do
+  [[ -f "$skill/SKILL.md" ]] || continue
+  skill_name="$(basename "$skill")"
+
+  link_config "$skill" ~/.config/opencode/skills/"$skill_name"
+  link_config "$skill" ~/.agents/skills/"$skill_name"
+  link_config "$skill" ~/.codex/skills/"$skill_name"
+  link_config "$skill" ~/.claude/skills/"$skill_name"
+done
+
 section "Workspace agent instructions"
 shopt -s nullglob
 workspace_registries=(

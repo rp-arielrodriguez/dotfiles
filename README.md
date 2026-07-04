@@ -49,7 +49,8 @@ Preview without changing files:
 │   ├── local.zsh.example    # Template for machine-specific
 │   └── secrets.zsh.example  # Template for API keys
 ├── config/agents/           # Shared agent config
-│   └── AGENTS.md            # Tool-neutral instructions for Codex/Claude/OpenCode
+│   ├── AGENTS.md            # Tool-neutral instructions for Codex/Claude/OpenCode
+│   └── skills/              # Shared public skills for supported agents
 └── scripts/
     ├── install.sh
     └── sync.sh
@@ -90,6 +91,21 @@ files are symlinks to that neutral source:
 
 Keep project/company-specific instructions in the nearest workspace or repository
 `AGENTS.md`/`CLAUDE.md`; the global file should stay personal and reusable.
+
+### Shared Skills
+
+Generic skills live in `config/agents/skills/`. The installer symlinks each skill
+folder into:
+
+| Tool | Skill path |
+|------|------------|
+| OpenCode | `~/.config/opencode/skills/<skill>` |
+| Generic agents | `~/.agents/skills/<skill>` |
+| Codex | `~/.codex/skills/<skill>` |
+| Claude Code | `~/.claude/skills/<skill>` |
+
+The first shared skill is `dotfiles-sync`, which gives agents the safe update
+workflow for this repo.
 
 ### Workspace Instructions
 

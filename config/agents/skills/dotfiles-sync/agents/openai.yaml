@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dotfiles Sync"
+  short_description: "Safely update dotfiles on a machine"
+  default_prompt: "Use $dotfiles-sync to sync this machine safely."
