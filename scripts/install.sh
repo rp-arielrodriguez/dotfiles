@@ -214,6 +214,11 @@ done
 # Symlink functions directory
 link_config "$DOTFILES_DIR/config/zsh/functions" ~/.config/zsh/functions
 
+section "Tmux config"
+TMUX_CONFIG="$DOTFILES_DIR/config/tmux/tmux.conf"
+link_config "$TMUX_CONFIG" ~/.config/tmux/tmux.conf
+link_config "$TMUX_CONFIG" ~/.tmux.conf
+
 # Symlink shared agent instructions from a tool-neutral source
 section "Global agent instructions"
 AGENT_INSTRUCTIONS="$DOTFILES_DIR/config/agents/AGENTS.md"

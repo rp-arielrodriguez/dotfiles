@@ -29,6 +29,8 @@ Preview without changing files:
 │   ├── .zshrc
 │   ├── .zshenv
 │   └── .gitconfig
+├── config/tmux/
+│   └── tmux.conf            # Portable tmux config and TPM plugin list
 ├── config/zsh/              # Modular zsh config
 │   ├── exports.zsh
 │   ├── git.zsh
@@ -49,7 +51,8 @@ Preview without changing files:
 
 1. Edit `~/.config/zsh/secrets.zsh` with your API keys
 2. Edit `~/.config/zsh/local.zsh` for machine-specific settings (theme, plugins)
-3. Restart your shell: `exec zsh`
+3. Install TPM if you want tmux plugins: `git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm`
+4. Restart your shell: `exec zsh`
 
 ## Platform Support
 
@@ -62,7 +65,8 @@ The installer and agent config support macOS and Linux. Shell startup detects:
 - Android SDK on Linux: `~/Android/Sdk`
 
 Oh My Zsh is optional for shell startup safety, but recommended because some git
-aliases expect Oh My Zsh's git helpers and plugins.
+aliases expect Oh My Zsh's git helpers and plugins. Tmux config is plain tmux and
+uses TPM-compatible plugin declarations for macOS/Linux portability.
 
 ## Agent Config
 
@@ -119,10 +123,28 @@ sensitive workspace instruction files in a private repo or under `~/.config/agen
 | `local.zsh` | Machine-specific: theme, plugins, fpath, tmux exit (gitignored) |
 | `secrets.zsh` | API keys: RP_UUID_CREDENTIAL, RP_QA_API_KEY (gitignored) |
 
+## Tmux
+
+Tmux config lives in `config/tmux/tmux.conf`. The installer links it to both
+`~/.config/tmux/tmux.conf` and `~/.tmux.conf` for XDG and legacy tmux startup
+compatibility.
+
+Plugins are declared for TPM:
+
+| Plugin | Purpose |
+|--------|---------|
+| `tmux-plugins/tpm` | Plugin manager |
+| `tmux-plugins/tmux-resurrect` | Save and restore tmux sessions |
+| `tmux-plugins/tmux-continuum` | Automatic session save/restore integration |
+
+Keep cloned plugin repositories and resurrected session state under `~/.tmux/`;
+do not commit them to this public repo.
+
 ## Features
 
 - **Lazy-loaded tools**: jenv, mise, nvm only initialize on first use (~500ms saved)
 - **Smart adb reverse**: Checks existing mappings before adding
+- **Tmux**: Portable tmux options with TPM plugin declarations
 - **Modular**: Each concern in its own file
 - **macOS/Linux portable**: Detects Homebrew/Linuxbrew, Android SDK, gh, jenv, mise, fzf
 - **Machine-specific**: `local.zsh` for per-machine customization

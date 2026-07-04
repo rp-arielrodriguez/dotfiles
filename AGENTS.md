@@ -62,6 +62,8 @@ Installer safety invariants:
 - `bin/`: portable helper commands symlinked into `~/.local/bin`.
 - `config/zsh/`: zsh modules symlinked into `~/.config/zsh`.
 - `config/zsh/*.example`: templates copied once to private local files.
+- `config/tmux/tmux.conf`: portable tmux config symlinked into
+  `~/.config/tmux/tmux.conf` and `~/.tmux.conf`.
 - `config/agents/AGENTS.md`: global agent instructions shared by Codex, Claude,
   OpenCode, and generic agent shims.
 - `config/agents/workspaces/`: public docs/examples for workspace-level mappings.
@@ -100,6 +102,13 @@ Then run:
 Add `config/zsh/<name>.zsh`. The installer links every `*.zsh` in that directory
 except `.example` templates. Keep secrets and per-machine values in
 `~/.config/zsh/secrets.zsh` or `~/.config/zsh/local.zsh`.
+
+### Update tmux config
+
+Edit `config/tmux/tmux.conf`. Keep it portable across macOS and Linux: use `~` or
+`$HOME`, avoid machine-specific absolute paths, and keep cloned TPM plugins and
+resurrected session state out of the repo. The installer links both the XDG path
+and legacy `~/.tmux.conf` to this source.
 
 ### Add machine-default developer tooling
 
