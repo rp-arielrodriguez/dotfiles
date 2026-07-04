@@ -7,6 +7,8 @@ install on a fresh developer machine.
 
 - Edit files in this repo, not the installed symlinks under `~`.
 - `scripts/install.sh` is the only supported installer.
+- `scripts/sync.sh` is the preferred machine update entrypoint; it pulls, dry-runs,
+  and optionally applies the installer.
 - `config/agents/AGENTS.md` is the global, tool-neutral agent instruction source.
 - Tool-specific files are installed as symlinks to `config/agents/AGENTS.md`:
   - `~/.config/opencode/AGENTS.md`
@@ -41,9 +43,11 @@ Private/local files currently expected by the installer:
 
 Before changing installer behavior:
 1. Run `bash -n scripts/install.sh`.
-2. Run `./scripts/install.sh --dry-run`.
-3. Inspect the exact human output.
-4. Run `git diff --check`.
+2. Run `bash -n scripts/sync.sh`.
+3. Run `./scripts/install.sh --dry-run`.
+4. Run `./scripts/sync.sh --no-pull`.
+5. Inspect the exact human output.
+6. Run `git diff --check`.
 
 The dry-run output is part of the UX. Keep it compact and grouped with status
 labels such as `[OK]`, `[LINK]`, `[RELINK]`, `[BACKUP]`, `[SKIP]`, `[CREATE]`.
@@ -68,6 +72,7 @@ Installer safety invariants:
   OpenCode, and generic agent shims.
 - `config/agents/workspaces/`: public docs/examples for workspace-level mappings.
 - `scripts/install.sh`: idempotent installer and dry-run reporter.
+- `scripts/sync.sh`: safe repo update + dry-run + optional install wrapper.
 
 ## Common Tasks
 

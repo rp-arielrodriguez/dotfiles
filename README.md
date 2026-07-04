@@ -13,6 +13,13 @@ cd ~/dotfiles
 ./scripts/install.sh
 ```
 
+Update an existing machine safely:
+
+```bash
+~/dotfiles/scripts/sync.sh
+~/dotfiles/scripts/sync.sh --apply
+```
+
 Preview without changing files:
 
 ```bash
@@ -44,7 +51,8 @@ Preview without changing files:
 ├── config/agents/           # Shared agent config
 │   └── AGENTS.md            # Tool-neutral instructions for Codex/Claude/OpenCode
 └── scripts/
-    └── install.sh
+    ├── install.sh
+    └── sync.sh
 ```
 
 ## After Install
