@@ -13,10 +13,20 @@ or project config file, not in this global file.
 Concise by default; never at the expense of correctness, clarity, or recoverability.
 When clarity and brevity conflict, prefer clarity.
 
-- Ultra-concise: commit messages, PR descriptions, simple factual answers.
+- Ultra-concise: commit messages, simple factual answers.
 - Moderate: status updates, test summaries, small implementation decisions.
 - Detailed/structured: debugging, migrations, root-cause analysis, trade-offs, state recovery, cross-PR coordination.
 - Simple + layman terms: docs, presentations, anything for a broad audience.
+
+### Writing Style
+
+- You MUST ALWAYS talk to me with ASD-STE100 Simplified Technical English (STE).
+- When you create a pull request, always use a description with this structure:
+  What, How, Testing, Notes. Give each section a title. Use bullet points for how
+  it was tested.
+- PR descriptions are brief but explanatory. Use ASD-STE100 for them as well.
+- Short replies (under about 150 words) are prose only: no headers, tables, or
+  bullet lists. Use structure only for longer or detailed answers.
 
 Always: no AI attribution in commits, code, or comments. Commit as the user; no
 AI-involvement mentions anywhere.
@@ -56,9 +66,14 @@ clean recovery answer. Do not continue the broken stream.
   `gh pr`, `gh issue`, `gh api`, `gh search`) because it exposes GitHub-native
   primitives that are more reliable than reconstructing those views from local
   checkout text.
-- Use local `rg` for code/content search within an already-selected checkout, but
-  do not treat `rg` as the default harness for GitHub repo, PR, issue, review, or
-  branch state.
+- Before treating local code as current, establish the authoritative default-branch
+  or PR-head commit with `gh`. If no local checkout matches that exact commit, or
+  the relevant paths have local modifications, inspect the live content with
+  `gh api`/`gh search` or create a fresh worktree at the verified commit.
+- Use local `rg` for code/content search only after that checkout provenance is
+  established. Never infer current remote behavior from an arbitrary, stale, or
+  dirty worktree, and do not treat `rg` as the default harness for GitHub repo,
+  PR, issue, review, or branch state.
 
 ## POC & Worktree Hygiene
 
@@ -196,10 +211,51 @@ Subagent routing:
 
 After a long session or 2-3 major tasks, suggest checkpointing and starting fresh.
 
+## Autonomous End-To-End Mode
+
+When the user says any of these phrases:
+- "work autonomously"
+- "end-to-end mode"
+- "finish it without waiting"
+- "no me esperes"
+- "modo autonomo"
+- "modo autonomo end-to-end"
+- "modo end-to-end"
+
+Treat it as explicit permission to work until the concrete objective is complete.
+
+Behavior:
+- Do not stop after proposing a plan.
+- Make reasonable assumptions and execute.
+- Ask the user only if truly blocked or if continuing would be unsafe/destructive.
+- Run independent checks/work in parallel when safe.
+- Keep short progress updates while working.
+- Verify with tests, smokes, docs, or CLI output checks as appropriate.
+- If Agent Continuity is available and the task is long-running, resume first and
+  checkpoint after meaningful progress or completion.
+- Report exactly what changed, what passed, and any residual risk.
+
 ## Canon Checkpoint Protocol
 
-Long-running tasks use the personal Agent Continuity tool. The database-backed
-canon is the source of truth; markdown files are exported compatibility projections.
+Long-running tasks use the personal Agent Continuity tool. Prefer daemon-backed
+continuity first:
+
+```bash
+continuity resume --daemon --task-id <TASK-ID>
+continuity checkpoint --daemon --task-id <TASK-ID> ...
+```
+
+When working inside a git checkout, the CLI usually infers `--project-id` from
+`remote.origin.url`. Outside a checkout, or when cross-machine syncing, pass it
+explicitly:
+
+```bash
+continuity resume --daemon --sync --project-id <OWNER>/<REPO> --task-id <TASK-ID>
+```
+
+The accepted daemon task blocks are the preferred source of truth. PostgreSQL /
+Absurd remains the compatibility fallback. Markdown files under checkpoint
+directories are exported projections, not authority.
 
 - Canon: current truth, overwritten, <=1 page, loaded first and in full on resume.
   Sections: SOURCE-OF-TRUTH, CURRENT-TRUTH, DECISIONS, REJECTED, NEXT-ACTION, plus
@@ -207,10 +263,22 @@ canon is the source of truth; markdown files are exported compatibility projecti
 - Journal: append-only history.
 
 Rules:
-1. ORIENT: run `continuity resume --task-id <TASK-ID>` first and treat that
-   database result as authority. Read markdown projections only for detail.
-2. CHECKPOINT: append journal and rewrite/reconcile canon through `continuity
-   checkpoint` and `continuity reconcile`. Never edit markdown checkpoint files as
-   the authority.
+1. ORIENT: run `continuity resume --daemon --task-id <TASK-ID>` first. If the task
+   may live on another trusted machine, add `--sync` and pass `--project-id`.
+   Treat the daemon result as authority. If the daemon is unavailable, fall back to
+   `continuity resume --task-id <TASK-ID>` and state that the fallback was used.
+2. CHECKPOINT: write progress through `continuity checkpoint --daemon`. Pass
+   `--canon-file` when a reconciled canon file exists, or pass `--canon` for
+   generated canon content. If the daemon is unavailable, run the same checkpoint
+   command without `--daemon` for PostgreSQL compatibility. Never edit markdown
+   checkpoint files as the authority.
 3. SUBAGENTS: hand the canon path in the spawn prompt; the subagent returns a
    canon delta; the parent reconciles.
+
+Cross-machine resume:
+- The source machine exposes a read-only peer listener, for example
+  `continuity daemon-start --peer-listen <tailscale-or-zerotier-ip>:9987`.
+- The target machine trusts it with
+  `continuity peer-add --endpoint tcp://<ip>:9987 --name <name> --provider tailscale`.
+- The target machine resumes with
+  `continuity resume --daemon --sync --project-id <OWNER>/<REPO> --task-id <TASK-ID>`.
