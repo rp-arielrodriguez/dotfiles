@@ -35,7 +35,10 @@ Preview without changing files:
 ├── home/                    # Symlinked to ~
 │   ├── .zshrc
 │   ├── .zshenv
-│   └── .gitconfig
+│   ├── .gitconfig
+│   └── .bazelrc              # Shared Bazel caches and 8 GiB action-cache GC
+├── config/launchd/
+│   └── com.local.bazel-output-base-gc.plist
 ├── config/tmux/
 │   └── tmux.conf            # Portable tmux config and TPM plugin list
 ├── config/zsh/              # Modular zsh config
@@ -173,6 +176,23 @@ do not commit them to this public repo.
 - **macOS/Linux portable**: Detects Homebrew/Linuxbrew, Android SDK, gh, jenv, mise, fzf
 - **Machine-specific**: `local.zsh` for per-machine customization
 - **Secrets**: API keys in separate gitignored file
+
+## Bazel Cache Maintenance
+
+The installer configures three independent cache boundaries:
+
+- Bazel's action disk cache is capped at 8 GiB by `~/.bazelrc`.
+- The repository cache is shared across workspaces to avoid duplicate downloads.
+- `bazel-output-base-gc` caps inactive temporary-worktree output bases at 20 GiB.
+
+On macOS, `com.local.bazel-output-base-gc` runs every six hours and at login. It
+preserves live Bazel servers, regular repository workspaces, and temporary bases
+younger than six hours. Manual runs are dry-run by default:
+
+```bash
+bazel-output-base-gc
+bazel-output-base-gc --apply
+```
 
 ## Adding a New Machine
 

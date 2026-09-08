@@ -1,0 +1,338 @@
+#!/usr/bin/env bash
+set -u
+
+APPLY=false
+MAX_TOTAL_GIB=20
+MIN_AGE_HOURS=6
+ROOT=""
+ROOT_EXPLICIT=false
+CANDIDATE_FILE=""
+DELETE_FILE=""
+LOCK_DIR=""
+
+usage() {
+  cat <<'EOF'
+Usage: bazel-output-base-gc [options]
+
+Cap inactive Bazel output bases created for temporary agent worktrees. The
+default mode prints the cleanup plan without deleting anything.
+
+Options:
+  --apply                 Apply the validated cleanup plan
+  --max-total-gib N       Temporary output-base cap in GiB (default: 20)
+  --min-age-hours N       Preserve bases younger than N hours (default: 6)
+  --root PATH             Override the Bazel output-user root
+  --help, -h              Show this help
+EOF
+}
+
+status() {
+  local label="$1"
+  local message="$2"
+
+  printf '[%-8s] %s\n' "$label" "$message"
+}
+
+fail() {
+  status "ERROR" "$1" >&2
+  exit 1
+}
+
+is_unsigned_integer() {
+  case "$1" in
+    ''|*[!0-9]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+mtime_seconds() {
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    stat -f '%m' "$1"
+  else
+    stat -c '%Y' "$1"
+  fi
+}
+
+format_kib() {
+  awk -v kib="$1" 'BEGIN { printf "%.1f GiB", kib / 1048576 }'
+}
+
+is_temporary_workspace() {
+  case "$1" in
+    /private/var/folders/*/T/opencode/*|/var/folders/*/T/opencode/*) return 0 ;;
+    /private/tmp/claude-*/*/scratchpad/*|/tmp/claude-*/*/scratchpad/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+server_is_live() {
+  local base="$1"
+  local pid
+
+  pid="$(cat "$base/server/server.pid.txt" 2>/dev/null || true)"
+  is_unsigned_integer "$pid" && kill -0 "$pid" 2>/dev/null
+}
+
+delete_quarantine() {
+  local quarantine="$1"
+
+  find "$quarantine" -type d -exec chmod u+w {} + 2>/dev/null || true
+  find "$quarantine" -depth -delete
+}
+
+cleanup_runtime() {
+  if [[ -n "$CANDIDATE_FILE" && -f "$CANDIDATE_FILE" ]]; then
+    rm -f "$CANDIDATE_FILE"
+  fi
+  if [[ -n "$DELETE_FILE" && -f "$DELETE_FILE" ]]; then
+    rm -f "$DELETE_FILE"
+  fi
+  if [[ -n "$LOCK_DIR" && -d "$LOCK_DIR" ]]; then
+    find "$LOCK_DIR" -depth -delete 2>/dev/null || true
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --apply)
+      APPLY=true
+      shift
+      ;;
+    --max-total-gib)
+      [[ $# -ge 2 ]] || fail "--max-total-gib requires a value"
+      MAX_TOTAL_GIB="$2"
+      shift 2
+      ;;
+    --min-age-hours)
+      [[ $# -ge 2 ]] || fail "--min-age-hours requires a value"
+      MIN_AGE_HOURS="$2"
+      shift 2
+      ;;
+    --root)
+      [[ $# -ge 2 ]] || fail "--root requires a path"
+      ROOT="$2"
+      ROOT_EXPLICIT=true
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown option: $1"
+      ;;
+  esac
+done
+
+is_unsigned_integer "$MAX_TOTAL_GIB" || fail "--max-total-gib must be a non-negative integer"
+is_unsigned_integer "$MIN_AGE_HOURS" || fail "--min-age-hours must be a non-negative integer"
+
+if [[ -z "$ROOT" ]]; then
+  user_name="${USER:-$(id -un)}"
+  for candidate in \
+    "$HOME/Library/Caches/bazel/_bazel_$user_name" \
+    "$HOME/.cache/bazel/_bazel_$user_name"; do
+    if [[ -d "$candidate" ]]; then
+      ROOT="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -z "$ROOT" ]]; then
+  status "OK" "no Bazel output-user root found"
+  exit 0
+fi
+
+ROOT="${ROOT%/}"
+if [[ ! -d "$ROOT" ]]; then
+  if [[ "$ROOT_EXPLICIT" == true ]]; then
+    fail "output-user root does not exist: $ROOT"
+  fi
+  status "OK" "no Bazel output-user root found"
+  exit 0
+fi
+
+trap cleanup_runtime EXIT INT TERM HUP
+
+if [[ "$APPLY" == true ]]; then
+  LOCK_DIR="$ROOT/.bazel-output-base-gc.lock"
+  if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    lock_pid="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+    if is_unsigned_integer "$lock_pid" && kill -0 "$lock_pid" 2>/dev/null; then
+      status "BUSY" "another cleanup is running with pid $lock_pid"
+      exit 0
+    fi
+
+    find "$LOCK_DIR" -depth -delete 2>/dev/null || fail "cannot clear stale lock: $LOCK_DIR"
+    mkdir "$LOCK_DIR" || fail "cannot acquire cleanup lock: $LOCK_DIR"
+  fi
+  printf '%s\n' "$$" > "$LOCK_DIR/pid"
+fi
+
+status "ROOT" "$ROOT"
+
+for quarantine in "$ROOT"/.bazel-output-base-gc-*; do
+  [[ -d "$quarantine" ]] || continue
+  if [[ "$APPLY" == true ]]; then
+    status "RESUME" "deleting prior quarantine $(basename "$quarantine")"
+    delete_quarantine "$quarantine" || fail "cannot delete prior quarantine: $quarantine"
+  else
+    status "PLAN" "finish deleting prior quarantine $(basename "$quarantine")"
+  fi
+done
+
+CANDIDATE_FILE="$(mktemp "${TMPDIR:-/tmp}/bazel-output-base-gc.candidates.XXXXXX")" || fail "cannot create candidate file"
+DELETE_FILE="$(mktemp "${TMPDIR:-/tmp}/bazel-output-base-gc.delete.XXXXXX")" || fail "cannot create deletion file"
+
+now="$(date +%s)"
+max_total_kib=$((MAX_TOTAL_GIB * 1024 * 1024))
+total_kib=0
+temporary_count=0
+active_count=0
+recent_count=0
+eligible_count=0
+
+for base in "$ROOT"/*; do
+  [[ -d "$base" ]] || continue
+  id="${base##*/}"
+  [[ ${#id} -eq 32 ]] || continue
+  case "$id" in
+    *[!0-9a-f]*) continue ;;
+  esac
+
+  first_line="$(sed -n '1p' "$base/README" 2>/dev/null || true)"
+  workspace="${first_line#WORKSPACE: }"
+  [[ "$first_line" == "WORKSPACE: $workspace" ]] || continue
+  is_temporary_workspace "$workspace" || continue
+
+  size_kib="$(du -sk "$base" 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  if ! is_unsigned_integer "$size_kib"; then
+    status "WARN" "cannot measure $id; preserving it"
+    continue
+  fi
+
+  modified="$(mtime_seconds "$base/README" 2>/dev/null || true)"
+  if ! is_unsigned_integer "$modified"; then
+    status "WARN" "cannot read age for $id; preserving it"
+    continue
+  fi
+
+  age_hours=$(((now - modified) / 3600))
+  if [[ $age_hours -lt 0 ]]; then
+    age_hours=0
+  fi
+
+  temporary_count=$((temporary_count + 1))
+  total_kib=$((total_kib + size_kib))
+
+  if server_is_live "$base"; then
+    active_count=$((active_count + 1))
+    status "PRESERVE" "$id is active (${age_hours}h, $(format_kib "$size_kib"))"
+    continue
+  fi
+
+  if [[ $age_hours -lt $MIN_AGE_HOURS ]]; then
+    recent_count=$((recent_count + 1))
+    status "PRESERVE" "$id is recent (${age_hours}h, $(format_kib "$size_kib"))"
+    continue
+  fi
+
+  eligible_count=$((eligible_count + 1))
+  printf '%s\t%s\t%s\t%s\t%s\n' "$modified" "$size_kib" "$id" "$age_hours" "$workspace" >> "$CANDIDATE_FILE"
+done
+
+status "USAGE" "$temporary_count temporary bases use $(format_kib "$total_kib"); cap is ${MAX_TOTAL_GIB}.0 GiB"
+status "SAFETY" "$active_count active, $recent_count recent, $eligible_count eligible"
+
+remaining_kib=$total_kib
+planned_count=0
+planned_kib=0
+
+if [[ $remaining_kib -gt $max_total_kib && -s "$CANDIDATE_FILE" ]]; then
+  while IFS=$'\t' read -r modified size_kib id age_hours workspace; do
+    if [[ $remaining_kib -le $max_total_kib ]]; then
+      continue
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$size_kib" "$id" "$age_hours" "$workspace" >> "$DELETE_FILE"
+    remaining_kib=$((remaining_kib - size_kib))
+  done < <(sort -n -k1,1 "$CANDIDATE_FILE")
+fi
+
+if [[ -s "$DELETE_FILE" ]]; then
+  while IFS=$'\t' read -r size_kib id age_hours workspace; do
+    planned_count=$((planned_count + 1))
+    planned_kib=$((planned_kib + size_kib))
+    status "PLAN" "delete $id (${age_hours}h, $(format_kib "$size_kib")) $workspace"
+  done < "$DELETE_FILE"
+fi
+
+if [[ "$APPLY" != true ]]; then
+  status "SUMMARY" "dry-run: $planned_count deletions, $(format_kib "$planned_kib") planned"
+  if [[ $remaining_kib -gt $max_total_kib ]]; then
+    status "WARN" "protected bases keep temporary usage above the cap"
+  fi
+  exit 0
+fi
+
+deleted_count=0
+deleted_kib=0
+failed_count=0
+
+if [[ -s "$DELETE_FILE" ]]; then
+  while IFS=$'\t' read -r size_kib id age_hours expected_workspace; do
+    base="$ROOT/$id"
+    quarantine="$ROOT/.bazel-output-base-gc-$id-$$"
+
+    if [[ ! -d "$base" ]]; then
+      status "SKIP" "$id disappeared before cleanup"
+      continue
+    fi
+
+    first_line="$(sed -n '1p' "$base/README" 2>/dev/null || true)"
+    workspace="${first_line#WORKSPACE: }"
+    if [[ "$workspace" != "$expected_workspace" ]] || ! is_temporary_workspace "$workspace"; then
+      status "SKIP" "$id changed ownership; preserving it"
+      continue
+    fi
+
+    if server_is_live "$base"; then
+      status "SKIP" "$id became active; preserving it"
+      continue
+    fi
+
+    modified="$(mtime_seconds "$base/README" 2>/dev/null || true)"
+    if ! is_unsigned_integer "$modified" || [[ $(((now - modified) / 3600)) -lt $MIN_AGE_HOURS ]]; then
+      status "SKIP" "$id is no longer old enough; preserving it"
+      continue
+    fi
+
+    if [[ -e "$quarantine" ]]; then
+      status "ERROR" "quarantine already exists for $id"
+      failed_count=$((failed_count + 1))
+      continue
+    fi
+
+    if ! mv "$base" "$quarantine"; then
+      status "ERROR" "cannot quarantine $id"
+      failed_count=$((failed_count + 1))
+      continue
+    fi
+
+    if delete_quarantine "$quarantine"; then
+      deleted_count=$((deleted_count + 1))
+      deleted_kib=$((deleted_kib + size_kib))
+      status "DELETED" "$id ($(format_kib "$size_kib"))"
+    else
+      status "ERROR" "cannot fully delete $quarantine; the next run will resume"
+      failed_count=$((failed_count + 1))
+    fi
+  done < "$DELETE_FILE"
+fi
+
+status "SUMMARY" "$deleted_count deleted, $(format_kib "$deleted_kib") logical space removed, $failed_count failures"
+if [[ $((total_kib - deleted_kib)) -gt $max_total_kib ]]; then
+  status "WARN" "protected or changed bases keep temporary usage above the cap"
+fi
+
+[[ $failed_count -eq 0 ]]

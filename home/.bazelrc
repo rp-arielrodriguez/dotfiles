@@ -1,0 +1,8 @@
+# User-level Bazel cache settings for local workspaces.
+# Keep action cache and repository cache separate. Sharing the same directory can
+# materialize incomplete external repositories from the action cache.
+build --disk_cache=~/.cache/bazel-disk-actions
+build --repository_cache=~/.cache/bazel-repository-cache
+build --experimental_disk_cache_gc_max_size=8G
+build --experimental_disk_cache_gc_max_age=7d
+build --experimental_disk_cache_gc_idle_delay=30s

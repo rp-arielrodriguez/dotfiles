@@ -193,6 +193,7 @@ section "Shell home files"
 link_config "$DOTFILES_DIR/home/.zshrc" ~/.zshrc
 link_config "$DOTFILES_DIR/home/.zshenv" ~/.zshenv
 link_config "$DOTFILES_DIR/home/.gitconfig" ~/.gitconfig
+link_config "$DOTFILES_DIR/home/.bazelrc" ~/.bazelrc
 
 section "Portable helper commands"
 ensure_dir ~/.local/bin
@@ -200,6 +201,28 @@ for f in "$DOTFILES_DIR/bin"/*; do
   [[ -f "$f" ]] || continue
   link_config "$f" ~/.local/bin/"$(basename "$f")"
 done
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  section "Background maintenance"
+  launch_agent_label="com.local.bazel-output-base-gc"
+  launch_agent_source="$DOTFILES_DIR/config/launchd/$launch_agent_label.plist"
+  launch_agent_target="$HOME/Library/LaunchAgents/$launch_agent_label.plist"
+  launch_agent_service="gui/$UID/$launch_agent_label"
+
+  link_config "$launch_agent_source" "$launch_agent_target"
+
+  if [[ "$DRY_RUN" == true ]]; then
+    if launchctl print "$launch_agent_service" >/dev/null 2>&1; then
+      status "RELOAD" "$launch_agent_label"
+    else
+      status "LOAD" "$launch_agent_label"
+    fi
+  else
+    launchctl bootout "$launch_agent_service" >/dev/null 2>&1 || true
+    launchctl bootstrap "gui/$UID" "$launch_agent_target"
+    status "LOAD" "$launch_agent_label"
+  fi
+fi
 
 # Create ~/.config/zsh and symlink modules
 section "Zsh modules"
